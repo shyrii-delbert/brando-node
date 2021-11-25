@@ -1,0 +1,37 @@
+@startuml
+
+object albums {
+  id: string
+  date: DATE
+  main_area: string
+  sub_area: string
+}
+
+object photos {
+  id: string
+  album_id: string
+  is_post: boolean
+  title: string
+  description: string
+}
+
+object reactions {
+  id: string
+  photo_id: string
+  type: number
+  user_id: string
+}
+
+object comments {
+  id: string
+  photo_id: string
+  content: string
+  reply_id: string
+  user_id: string
+}
+
+albums --> photos
+photos --> reactions
+photos --> comments
+
+@enduml
