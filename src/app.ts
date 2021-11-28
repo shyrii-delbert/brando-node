@@ -1,3 +1,6 @@
+import './env';
+import './requireHack';
+
 import express from 'express';
 import { init as initDB } from '$db';
 import { registerRoutes } from '$routes';
