@@ -1,0 +1,27 @@
+name: Deploy to scf
+on: 
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Cache NodeModules
+      id: cache-node-modules
+      uses: actions/cache@v2
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-${{ hashFiles('./pnpm-lock.yaml') }}
+
+    - name: Install dependencies
+      if: steps.cache-primes.outputs.cache-hit != 'true'
+      run: npm install -g pnpm && pnpm install
+
+    - name: Do deploy
+      run: pnpm run publish_$([[ $GITHUB_REF_NAME = "main" ]] && echo prd || echo staging)

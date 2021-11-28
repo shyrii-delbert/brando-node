@@ -1,0 +1,2 @@
+#!/bin/bash
+NODE_ENV=production /var/lang/node12/bin/node --enable-source-maps ./dist/app.js
