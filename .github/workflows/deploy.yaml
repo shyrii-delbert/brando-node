@@ -1,27 +1,39 @@
-name: Deploy to scf
+name: Deploy to SCF
 on: 
   push:
     branches: [ main, develop ]
 
 jobs:
-  Explore-GitHub-Actions:
+  Depliy:
     runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Cache NodeModules
-      id: cache-node-modules
-      uses: actions/cache@v2
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('./pnpm-lock.yaml') }}
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
-    - name: Install dependencies
-      if: steps.cache-primes.outputs.cache-hit != 'true'
-      run: npm install -g pnpm && pnpm install
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            */*/node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-    - name: Do deploy
-      run: pnpm run publish_$([[ $GITHUB_REF_NAME = "main" ]] && echo prd || echo staging)
+      - name: Install dependencies
+        if: steps.cache-primes.outputs.cache-hit != 'true'
+        run: npm install -g pnpm && pnpm install
+
+      - name: Do deploy
+        env:
+          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          BUCKET_REGION: ${{ secrets.BUCKET_REGION }}
+          FUNCTION_NAME: ${{ secrets.FUNCTION_NAME }}
+          FUNCTION_NAME_STAGING: ${{ secrets.FUNCTION_NAME_STAGING }}
+          SECRET_ID: ${{ secrets.SECRET_ID }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        run: pnpm run publish_$([[ $GITHUB_REF_NAME = "main" ]] && echo prd || echo staging)
