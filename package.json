@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "pnpm run build && node --enable-source-maps ./dist/app.js",
-    "build": "rm -rf dist/*.* && node config/build.js",
-    "build_prd": "rm -rf dist/*.* && NODE_ENV=production node config/build.js",
+    "build": "rm -rf dist/* && node config/build.js",
+    "build_prd": "rm -rf dist/* && NODE_ENV=production node config/build.js",
     "publish_staging": "pnpm run build_prd && PUB_ENV=staging bash ./config/publish.sh",
     "publish_prd": "pnpm run build_prd && PUB_ENV=prd bash ./config/publish.sh"
   },
