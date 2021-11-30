@@ -13,7 +13,7 @@ Image.init({
   },
   object_key: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
   },
 }, {
   sequelize,
