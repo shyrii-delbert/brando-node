@@ -24,7 +24,7 @@ const cos = new COS({
 const filename = `brando-${dayjs().format('YY-MM-DDTHH-mm-ss')}-${v4().slice(-8)}.zip`;
 
 cos.putObject({
-  Bucket: process.env.BUCKET_NAME,
+  Bucket: process.env.ARTIFACT_BUCKET_NAME,
   Region: process.env.BUCKET_REGION,
   Key: filename,
   StorageClass: 'STANDARD',
@@ -40,7 +40,7 @@ cos.putObject({
       process.env.FUNCTION_NAME_STAGING;
     scfClient.UpdateFunctionCode({
       FunctionName: targetFunctionName,
-      CosBucketName: process.env.BUCKET_NAME,
+      CosBucketName: process.env.ARTIFACT_BUCKET_NAME,
       CosBucketRegion: process.env.BUCKET_REGION,
       CosObjectName: filename,
       Publish: 'TRUE',

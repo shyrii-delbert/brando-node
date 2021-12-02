@@ -33,6 +33,14 @@
       "$db/*": ["./src/db/*"],
       "$routes": ["./src/routes"],
       "$routes/*": ["./src/routes/*"],
+      "$typings": ["./src/typings"],
+      "$typings/*": ["./src/typings/*"],
+      "$middlewares": ["./src/middlewares"],
+      "$middlewares/*": ["./src/middlewares/*"],
+      "$utils": ["./src/utils"],
+      "$utils/*": ["./src/utils/*"],
+      "$consts": ["./src/consts"],
+      "$consts/*": ["./src/consts/*"],
     },                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like `./node_modules/@types`. */

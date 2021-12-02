@@ -30,7 +30,7 @@ jobs:
 
       - name: Do deploy
         env:
-          BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+          ARTIFACT_BUCKET_NAME: ${{ secrets.ARTIFACT_BUCKET_NAME }}
           BUCKET_REGION: ${{ secrets.BUCKET_REGION }}
           FUNCTION_NAME: ${{ secrets.FUNCTION_NAME }}
           FUNCTION_NAME_STAGING: ${{ secrets.FUNCTION_NAME_STAGING }}
