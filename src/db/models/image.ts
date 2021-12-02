@@ -1,8 +1,9 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '$db/connection';
 import { Photo } from './photo';
+import { ImageModel } from '$typings/images';
 
-export class Image extends Model { }
+export class Image extends Model<ImageModel> { }
 
 Image.init({
   id: {
@@ -11,8 +12,9 @@ Image.init({
     primaryKey: true,
     unique: true,
   },
-  object_key: {
+  objectPath: {
     type: DataTypes.UUID,
+    field: 'object_path',
     allowNull: true,
   },
 }, {
