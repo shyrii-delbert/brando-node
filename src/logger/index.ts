@@ -1,13 +1,34 @@
+import dayjs from 'dayjs';
 import log4js from 'log4js';
+
+const layout = {
+  type: 'pattern',
+  tokens: {
+    myTime: function (logEvent: log4js.LoggingEvent) {
+      return dayjs(logEvent.startTime).format('YYYY-MM-DDTHH:mm:ss.SSS');
+    }
+  }
+};
+
+const basicLayout: log4js.Layout = {
+  ...layout,
+  pattern: '[%x{myTime}] [%p] %c - %m',
+}
+
+const colorfulLayout = {
+  ...layout,
+  pattern: '%[[%x{myTime}] [%p] %c -%] %m',
+};
 
 log4js.configure({
   appenders: {
     colorful: {
       type: 'stdout',
+      layout: colorfulLayout,
     },
     basic: {
-      type: 'console',
-      layout: { type: 'basic' },
+      type: 'stdout',
+      layout: basicLayout,
     },
   },
   categories: {
