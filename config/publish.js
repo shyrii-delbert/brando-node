@@ -2,8 +2,14 @@ require('dotenv').config();
 
 const fs = require('fs');
 const dayjs = require('dayjs');
+const timezone = require('dayjs/plugin/timezone');
+const utc = require('dayjs/plugin/utc');
 const { v4 } = require('uuid');
 const tencentcloud = require("tencentcloud-sdk-nodejs");
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault('Asia/Shanghai');
 
 const ScfClient = tencentcloud.scf.v20180416.Client;
 const scfClient = new ScfClient({
