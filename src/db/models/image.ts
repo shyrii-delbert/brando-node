@@ -13,9 +13,13 @@ Image.init({
     unique: true,
   },
   objectPath: {
-    type: DataTypes.UUID,
+    type: DataTypes.STRING,
     field: 'object_path',
-    allowNull: true,
+    allowNull: false,
+  },
+  uploaded: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
 }, {
   sequelize,

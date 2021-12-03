@@ -31,13 +31,14 @@ imagesRouter.route('/').post<{}, Response<PostImagesRes>, PostImagesReq>(async (
   }
 
   const imageId = v4();
-  try {
+  try {    
+    const { data, path }  = await getStsRes(imageId, imageType);
+    
     await Image.create({
       id: imageId,
-      objectPath: null,
+      objectPath: path,
+      uploaded: false,
     });
-
-    const { data, path }  = await getStsRes(imageId, imageType);
 
     res.send(wrapRes<PostImagesRes>({
       imageId,

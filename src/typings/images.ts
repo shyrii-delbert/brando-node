@@ -1,6 +1,7 @@
 export interface ImageModel {
   id: string;
-  objectPath: string | null;
+  objectPath: string;
+  uploaded: boolean;
 }
 
 export interface PostImagesReq {
