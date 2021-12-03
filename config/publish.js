@@ -27,7 +27,7 @@ const cos = new COS({
   SecretKey: process.env.SECRET_KEY,
 });
 
-const filename = `brando-${dayjs().format('YY-MM-DDTHH-mm-ss')}-${v4().slice(-8)}.zip`;
+const filename = `brando-${dayjs().tz().format('YY-MM-DDTHH-mm-ss')}-${v4().slice(-8)}.zip`;
 
 cos.putObject({
   Bucket: process.env.ARTIFACT_BUCKET_NAME,

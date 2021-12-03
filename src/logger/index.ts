@@ -5,7 +5,7 @@ const layout = {
   type: 'pattern',
   tokens: {
     myTime: function (logEvent: log4js.LoggingEvent) {
-      return dayjs(logEvent.startTime).format('YYYY-MM-DDTHH:mm:ss.SSS');
+      return dayjs(logEvent.startTime).tz().format('YYYY-MM-DDTHH:mm:ss.SSS');
     }
   }
 };
