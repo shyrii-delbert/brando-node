@@ -2,13 +2,17 @@ import log4js from 'log4js';
 
 log4js.configure({
   appenders: {
-    stdout: {
+    colorful: {
       type: 'stdout',
+    },
+    basic: {
+      type: 'console',
+      layout: { type: 'basic' },
     },
   },
   categories: {
     default: {
-      appenders: ['stdout'],
+      appenders: process.env.NODE_ENV !== 'production' ? ['colorful'] : ['basic'],
       level: 'all',
     },
   },

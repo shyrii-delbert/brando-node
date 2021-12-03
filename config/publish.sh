@@ -5,6 +5,7 @@ source .env
 mkdir public_temp
 cp ./config/scf_bootstrap ./public_temp
 cp -r ./dist ./public_temp/dist
+rm ./public_temp/dist/*.map
 
 # Zip it
 pushd ./public_temp
