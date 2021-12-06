@@ -43,6 +43,8 @@ imagesRouter.route('/')
       res.send(wrapRes<PostImagesRes>({
         imageId,
         path,
+        bucket: process.env.IMAGES_BUCKET_NAME,
+        region: process.env.BUCKET_REGION,
       }));
     } catch (e) {
       next({
@@ -107,8 +109,6 @@ imagesRouter.route('/authorize').get<{}, Response<GetImageAuthorizeRes>>(async (
       tmpSecretId: data.credentials.tmpSecretId,
       tmpSecretKey: data.credentials.tmpSecretKey,
       sessionToken: data.credentials.sessionToken,
-      bucket: process.env.IMAGES_BUCKET_NAME,
-      region: process.env.BUCKET_REGION,
       startTime: dayjs().unix(),
       expiredTime: dayjs().add(10, 'm').unix(),
     }));

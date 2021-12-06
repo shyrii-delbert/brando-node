@@ -15,14 +15,14 @@ export interface PatchImagesReq {
 export interface PostImagesRes {
   imageId: string;
   path: string;
+  bucket: string;
+  region: string;
 };
 
 export interface GetImageAuthorizeRes {
   tmpSecretId: string;
   tmpSecretKey: string;
   sessionToken: string;
-  bucket: string;
-  region: string;
   startTime: number;
   expiredTime: number;
 }
