@@ -11,10 +11,6 @@ Reaction.init({
     primaryKey: true,
     unique: true,
   },
-  is_post: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
   type: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
