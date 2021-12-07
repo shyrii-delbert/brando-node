@@ -11,8 +11,9 @@ Photo.init({
     primaryKey: true,
     unique: true,
   },
-  is_post: {
+  isPost: {
     type: DataTypes.BOOLEAN,
+    field: 'is_post',
     defaultValue: false,
   },
   title: {
