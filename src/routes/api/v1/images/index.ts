@@ -32,7 +32,7 @@ imagesRouter.route('/')
 
     const imageId = v4();
     try {
-      const path = `/images/${imageId}.${imageType}`;
+      const path = `images/${imageId}.${imageType}`;
 
       await Image.create({
         id: imageId,
@@ -86,7 +86,7 @@ imagesRouter.route('/')
     try {
       const verifyRes = await verifyImage(imageValue.objectPath);
       if (verifyRes) {
-        await image!.update('uploaded', true);
+        await image!.set('uploaded', true).save();
         res.send(wrapRes({}));
       } else {
         next({

@@ -30,7 +30,7 @@ export const ErrorCode = {
   [ErrorType.ImageNotUploaded]: 1004,
   [ErrorType.STSError]: 2001,
   [ErrorType.DBError]: 3001,
-  [ErrorType.DBError]: 4001,
+  [ErrorType.COSError]: 4001,
 };
 
 const unexpectedErrorMsg = 'Unexpected error occurred, please contact delbertbeta@live.com for help';
