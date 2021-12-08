@@ -22,7 +22,7 @@ initDB().then(() => {
   const port = 9000;
 
   app.use(cors({
-    origin: ['https://brando-admin.delbertbeta.life', 'https://brando-admin-staging.delbertbeta.life', 'http://localhost:*']
+    origin: 'https://brando-admin.delbertbeta.life,https://brando-admin-staging.delbertbeta.life,http://localhost:*',
   }));
   app.use(expressLogMiddleware);
   app.use(bodyParser.json());
