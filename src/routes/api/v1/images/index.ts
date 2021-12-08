@@ -32,7 +32,7 @@ imagesRouter.route('/')
 
     const imageId = v4();
     try {
-      const path = `${imageId}.${imageType}`;
+      const path = `/images/${imageId}.${imageType}`;
 
       await Image.create({
         id: imageId,
