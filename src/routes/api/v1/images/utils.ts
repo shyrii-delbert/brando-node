@@ -3,7 +3,7 @@ import { cos } from '$utils/cos';
 
 export const getStsRes = () => {
   return new Promise<STS.CredentialData>((resolve, reject) => {
-    const path = `/images/*`;
+    const path = `images/*`;
     const policy = STS.getPolicy([{
       action: 'name/cos:PutObject',
       bucket: process.env.IMAGES_BUCKET_NAME,

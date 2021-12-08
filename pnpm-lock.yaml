@@ -1,11 +1,13 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@types/cors': ^2.8.12
   '@types/express': ^4.17.13
   '@types/lodash-es': ^4.17.5
   '@types/uuid': ^8.3.3
   body-parser: ^1.19.0
   cookie-parser: ~1.4.4
+  cors: ^2.8.5
   cos-nodejs-sdk-v5: ^2.11.3
   dayjs: ^1.10.7
   dotenv: ^10.0.0
@@ -24,6 +26,7 @@ specifiers:
 dependencies:
   body-parser: registry.nlark.com/body-parser/1.19.0
   cookie-parser: registry.npmmirror.com/cookie-parser/1.4.6
+  cors: registry.nlark.com/cors/2.8.5
   cos-nodejs-sdk-v5: registry.npmmirror.com/cos-nodejs-sdk-v5/2.11.3
   dayjs: registry.nlark.com/dayjs/1.10.7
   dotenv: registry.nlark.com/dotenv/10.0.0
@@ -38,6 +41,7 @@ dependencies:
   uuid: registry.npmmirror.com/uuid/8.3.2
 
 devDependencies:
+  '@types/cors': registry.npmmirror.com/@types/cors/2.8.12
   '@types/express': registry.npmmirror.com/@types/express/4.17.13
   '@types/lodash-es': registry.npmmirror.com/@types/lodash-es/4.17.5
   '@types/uuid': registry.npmmirror.com/@types/uuid/8.3.3
@@ -207,6 +211,16 @@ packages:
     resolution: {integrity: sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/core-util-is/download/core-util-is-1.0.2.tgz}
     name: core-util-is
     version: 1.0.2
+    dev: false
+
+  registry.nlark.com/cors/2.8.5:
+    resolution: {integrity: sha1-6sEdpRWS3Ya58G9uesKTs9+HXSk=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/cors/download/cors-2.8.5.tgz}
+    name: cors
+    version: 2.8.5
+    engines: {node: '>= 0.10'}
+    dependencies:
+      object-assign: registry.nlark.com/object-assign/4.1.1
+      vary: registry.nlark.com/vary/1.1.2
     dev: false
 
   registry.nlark.com/dashdash/1.14.1:
@@ -627,6 +641,13 @@ packages:
     version: 0.9.0
     dev: false
 
+  registry.nlark.com/object-assign/4.1.1:
+    resolution: {integrity: sha1-IQmtx5ZYh8/AXLvUQsrIv7s2CGM=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/object-assign/download/object-assign-4.1.1.tgz}
+    name: object-assign
+    version: 4.1.1
+    engines: {node: '>=0.10.0'}
+    dev: false
+
   registry.nlark.com/on-finished/2.3.0:
     resolution: {integrity: sha1-IPEzZIGwg811M3mSoWlxqi2QaUc=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/on-finished/download/on-finished-2.3.0.tgz}
     name: on-finished
@@ -1005,6 +1026,12 @@ packages:
     version: 3.4.35
     dependencies:
       '@types/node': registry.npmmirror.com/@types/node/16.11.10
+    dev: true
+
+  registry.npmmirror.com/@types/cors/2.8.12:
+    resolution: {integrity: sha1-ayxRCnrXA56Y57jT1lmPQ1nlwIA=, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/cors/download/@types/cors-2.8.12.tgz}
+    name: '@types/cors'
+    version: 2.8.12
     dev: true
 
   registry.npmmirror.com/@types/express-serve-static-core/4.17.25:
