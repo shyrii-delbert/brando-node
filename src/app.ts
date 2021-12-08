@@ -5,7 +5,6 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import express from 'express';
-import cors from 'cors';
 import bodyParser from 'body-parser';
 import { init as initDB } from '$db';
 import { registerRoutes } from '$routes';
@@ -21,9 +20,6 @@ initDB().then(() => {
   const app = express();
   const port = 9000;
 
-  app.use(cors({
-    origin: 'https://brando-admin.delbertbeta.life,https://brando-admin-staging.delbertbeta.life,http://localhost:*',
-  }));
   app.use(expressLogMiddleware);
   app.use(bodyParser.json());
   registerRoutes(app);
