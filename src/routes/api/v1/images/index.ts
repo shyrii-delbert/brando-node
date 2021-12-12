@@ -52,9 +52,12 @@ imagesRouter.route('/')
         extraInfo: JSON.stringify(e),
       } as BrandoError);
     }
-  })
-  .patch<{}, Response<{}>, PatchImagesReq>(async (req, res, next) => {
-    const { imageId } = req.body || {};
+  });
+
+
+imagesRouter.route('/:imageId')
+  .patch<{ imageId: string }, Response<{}>, PatchImagesReq>(async (req, res, next) => {
+    const { imageId } = req.params || {};
 
     if (!imageId) {
       next({
