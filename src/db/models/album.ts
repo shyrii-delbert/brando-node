@@ -1,7 +1,8 @@
-import { Sequelize, DataTypes, Model, Deferrable } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '$db/connection';
+import { AlbumModel } from '$typings/albums';
 
-export class Album extends Model { }
+export class Album extends Model<AlbumModel> { }
 
 Album.init({
   id: {
