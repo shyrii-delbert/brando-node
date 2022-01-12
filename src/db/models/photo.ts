@@ -1,8 +1,9 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '$db/connection';
 import { Album } from './album';
+import { PhotoModel } from '$typings/photos';
 
-export class Photo extends Model { }
+export class Photo extends Model<PhotoModel> {}
 
 Photo.init({
   id: {
