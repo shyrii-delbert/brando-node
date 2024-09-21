@@ -1,0 +1,3 @@
+[submodule "rpc-idl"]
+	path = rpc-idl
+	url = https://github.com/delbertbeta/rpc-idl.git

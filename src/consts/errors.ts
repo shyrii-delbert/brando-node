@@ -9,9 +9,11 @@ export enum ErrorType {
   'STSError' = 'STSError',
   'DBError' = 'DBError',
   'COSError' = 'COSError',
+  'NotLogin' = 'NotLogin',
 }
 
 export const ErrorHttpCode = {
+  [ErrorType.NotLogin]: StatusCodes.UNAUTHORIZED,
   [ErrorType.ServiceInternalError]: StatusCodes.INTERNAL_SERVER_ERROR,
   [ErrorType.ImageNotSupport]: StatusCodes.UNSUPPORTED_MEDIA_TYPE,
   [ErrorType.ImageNotFound]: StatusCodes.NOT_FOUND,
@@ -24,6 +26,7 @@ export const ErrorHttpCode = {
 
 export const ErrorCode = {
   [ErrorType.ServiceInternalError]: -1,
+  [ErrorType.NotLogin]: -2,
   [ErrorType.ImageNotSupport]: 1001,
   [ErrorType.InvalidParams]: 1002,
   [ErrorType.ImageNotFound]: 1003,
@@ -33,9 +36,11 @@ export const ErrorCode = {
   [ErrorType.COSError]: 4001,
 };
 
-const unexpectedErrorMsg = 'Unexpected error occurred, please contact delbertbeta@live.com for help';
+const unexpectedErrorMsg =
+  'Unexpected error occurred, please contact delbertbeta@live.com for help';
 
 export const ErrorMsg = {
+  [ErrorType.NotLogin]: 'Login required',
   [ErrorType.ServiceInternalError]: unexpectedErrorMsg,
   [ErrorType.ImageNotSupport]: 'This imageType is not supported',
   [ErrorType.ImageNotFound]: 'Requested image is not found',
