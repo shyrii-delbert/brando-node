@@ -38,7 +38,7 @@ export interface GetUserIdByCookieResponse {
 }
 
 export interface GetUserRequest {
-  userId: string[];
+  userId: number[];
 }
 
 export interface GetUserResponse {
@@ -289,9 +289,11 @@ function createBaseGetUserRequest(): GetUserRequest {
 
 export const GetUserRequest: MessageFns<GetUserRequest> = {
   encode(message: GetUserRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    writer.uint32(10).fork();
     for (const v of message.userId) {
-      writer.uint32(10).string(v!);
+      writer.int32(v);
     }
+    writer.join();
     return writer;
   },
 
@@ -303,12 +305,22 @@ export const GetUserRequest: MessageFns<GetUserRequest> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          if (tag !== 10) {
-            break;
+          if (tag === 8) {
+            message.userId.push(reader.int32());
+
+            continue;
           }
 
-          message.userId.push(reader.string());
-          continue;
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.userId.push(reader.int32());
+            }
+
+            continue;
+          }
+
+          break;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -320,14 +332,14 @@ export const GetUserRequest: MessageFns<GetUserRequest> = {
 
   fromJSON(object: any): GetUserRequest {
     return {
-      userId: globalThis.Array.isArray(object?.userId) ? object.userId.map((e: any) => globalThis.String(e)) : [],
+      userId: globalThis.Array.isArray(object?.userId) ? object.userId.map((e: any) => globalThis.Number(e)) : [],
     };
   },
 
   toJSON(message: GetUserRequest): unknown {
     const obj: any = {};
     if (message.userId?.length) {
-      obj.userId = message.userId;
+      obj.userId = message.userId.map((e) => Math.round(e));
     }
     return obj;
   },
