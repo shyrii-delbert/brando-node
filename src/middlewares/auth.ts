@@ -29,5 +29,7 @@ export const auth: RequestHandler<{}, Response<ErrorRes>> = async (
     return;
   }
 
+  req.userId = userId;
+
   next();
 };

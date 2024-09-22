@@ -1,4 +1,8 @@
-import { UserServiceClient } from '../rpc-gen/user';
+import {
+  GetUserRequest,
+  GetUserResponse,
+  UserServiceClient,
+} from '../rpc-gen/user';
 import grpc from '@grpc/grpc-js';
 import {
   GetUserIdByCookieResponse,
@@ -15,3 +19,7 @@ export const promisedGetUserIdByCookie = promisify<
   GetUserIdByCookieRequest,
   GetUserIdByCookieResponse
 >(ssoRpcClient.getUserIdByCookie.bind(ssoRpcClient));
+
+export const promisedGetUserByIds = promisify<GetUserRequest, GetUserResponse>(
+  ssoRpcClient.getUser.bind(ssoRpcClient)
+);

@@ -12,6 +12,12 @@ declare global {
       IMAGES_BUCKET_NAME: string;
     }
   }
+
+  namespace Express {
+    export interface Request {
+      userId?: number;
+    }
+  }
 }
 
 export {};
