@@ -23,7 +23,7 @@ dayjs.tz.setDefault('Asia/Shanghai');
 initDB()
   .then(() => {
     const app = express();
-    const port = 3001;
+    const port = 8088;
 
     app.use(
       cors({
