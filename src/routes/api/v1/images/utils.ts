@@ -127,10 +127,10 @@ export const resizeImage = (
   const isHorizontal = originWidth > originHeight;
   const ratio = originWidth / originHeight;
   const targetWidth = Math.floor(
-    isHorizontal ? targetMaxLength : targetMaxLength / ratio
+    isHorizontal ? targetMaxLength : targetMaxLength * ratio
   );
   const targetHeight = Math.floor(
-    isHorizontal ? targetMaxLength * ratio : targetMaxLength
+    isHorizontal ? targetMaxLength / ratio : targetMaxLength
   );
 
   return new Promise((resolve, reject) => {
