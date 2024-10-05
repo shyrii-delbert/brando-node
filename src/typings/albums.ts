@@ -1,3 +1,4 @@
+import { ImageModel } from './images';
 import { PhotoModel } from './photos';
 
 export interface AlbumModel {
@@ -13,4 +14,12 @@ interface PhotoParam extends Omit<PhotoModel, 'id'> {
 
 export interface PostAlbumsReq extends Omit<AlbumModel, 'id'> {
   photos: PhotoParam[];
+}
+
+export interface GetAlbumsRes {
+  albums: (AlbumModel & {
+    photos: (PhotoModel & {
+      image: ImageModel;
+    })[];
+  })[];
 }

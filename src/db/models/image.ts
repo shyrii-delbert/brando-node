@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '$db/connection';
 import { Photo } from './photo';
 import { ImageModel } from '$typings/images';
+import { generateCDNUrl } from '$utils';
 
 export class Image extends Model<ImageModel> {}
 
@@ -30,10 +31,6 @@ Image.init(
       field: 'object_path',
       allowNull: false,
     },
-    uploaded: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
   },
   {
     sequelize,
@@ -46,3 +43,17 @@ Photo.hasOne(Image, {
   foreignKey: 'image_id',
 });
 Image.belongsTo(Photo);
+
+export function processImageObj(image: ImageModel): ImageModel {
+  return {
+    ...image,
+    objectPath: generateCDNUrl(image.objectPath),
+    proxied: Object.entries(image.proxied).reduce<ImageModel['proxied']>(
+      (pre, acc) => {
+        pre[acc[0] as keyof ImageModel['proxied']] = generateCDNUrl(acc[1]);
+        return pre;
+      },
+      {}
+    ),
+  };
+}

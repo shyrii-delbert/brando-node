@@ -10,6 +10,7 @@ declare global {
       SECRET_KEY: string;
       BUCKET_REGION: string;
       IMAGES_BUCKET_NAME: string;
+      CDN_PREFIX: string;
     }
   }
 

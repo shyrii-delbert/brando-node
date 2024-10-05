@@ -76,7 +76,6 @@ imagesRouter
       });
 
       if (existImage) {
-        console.warn(existImage.get());
         res.send(
           wrapRes<PostImagesRes>({
             imageId: existImage.get().id,
@@ -187,7 +186,6 @@ imagesRouter
         await Image.create({
           id: imageId,
           objectPath: objectPaths.origin!,
-          uploaded: true,
           sha256,
           exif: exifObj,
           proxied: {

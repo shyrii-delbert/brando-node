@@ -1,7 +1,6 @@
 export interface ImageModel {
   id: string;
   objectPath: string;
-  uploaded: boolean;
   sha256: string;
   proxied: {
     '480p'?: string;

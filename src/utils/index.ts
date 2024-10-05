@@ -16,3 +16,7 @@ export const wrapErrorRes = (code: number, msg: string): Response<ErrorRes> => {
     },
   };
 };
+
+export const generateCDNUrl = (path: string) => {
+  return `${process.env.CDN_PREFIX}${path}`;
+};

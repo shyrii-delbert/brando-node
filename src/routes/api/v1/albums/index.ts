@@ -1,19 +1,29 @@
 import { Router } from 'express';
 import { Response } from '$typings/response';
-import { PostAlbumsReq } from '$typings/albums';
+import { GetAlbumsRes, PostAlbumsReq } from '$typings/albums';
 import { BrandoError } from '$typings/errors';
 import { ErrorType } from '$consts/errors';
 import { isArray, isBoolean, isObject, isString } from 'lodash-es';
-import { Image } from '$db/models/image';
+import { Image, processImageObj } from '$db/models/image';
 import { Album, Photo } from '$db';
 import { wrapRes } from '$utils';
+import {
+  HasManyGetAssociationsMixin,
+  HasOneGetAssociationMixin,
+} from 'sequelize';
 
 export const albumsRouter = Router({ mergeParams: true });
 
-albumsRouter.route('/')
+albumsRouter
+  .route('/')
   .post<{}, Response<{}>, PostAlbumsReq>(async (req, res, next) => {
     const { photos, subArea, mainArea, date } = req.body || {};
-    if (!isArray(photos) || !isString(subArea) || !isString(mainArea) || !isString(date)) {
+    if (
+      !isArray(photos) ||
+      !isString(subArea) ||
+      !isString(mainArea) ||
+      !isString(date)
+    ) {
       next({
         type: ErrorType.InvalidParams,
         extraInfo: JSON.stringify(req.body),
@@ -33,7 +43,12 @@ albumsRouter.route('/')
         return;
       }
       const { isPost, title, description, imageId } = photo;
-      if (!isBoolean(isPost) || !isString(title) || !isString(description) || !isString(imageId)) {
+      if (
+        !isBoolean(isPost) ||
+        !isString(title) ||
+        !isString(description) ||
+        !isString(imageId)
+      ) {
         next({
           type: ErrorType.InvalidParams,
           extraInfo: JSON.stringify(req.body),
@@ -49,14 +64,7 @@ albumsRouter.route('/')
         } as BrandoError);
         return;
       }
-      const imageObj = image.toJSON();
-      if (!imageObj.uploaded) {
-        next({
-          type: ErrorType.ImageNotUploaded,
-          extraInfo: JSON.stringify(req.body),
-        } as BrandoError);
-        return;
-      }
+
       if (isPost && hasPost) {
         next({
           type: ErrorType.InvalidParams,
@@ -83,5 +91,41 @@ albumsRouter.route('/')
     res.send(wrapRes({}));
   })
   .get(async (req, res, next) => {
+    const albumModels = await Album.findAll();
 
+    const albums: GetAlbumsRes['albums'] = await Promise.all(
+      albumModels.map(
+        (albumModel) =>
+          new Promise<GetAlbumsRes['albums'][number]>(async (resolve) => {
+            const photoModels = await (
+              (albumModel as any)
+                .getPhotos as HasManyGetAssociationsMixin<Photo>
+            )();
+
+            const images = await Promise.all(
+              photoModels.map((photoModel) =>
+                (
+                  (photoModel as any)
+                    .getImage as HasOneGetAssociationMixin<Image>
+                )()
+              )
+            );
+
+            const album: GetAlbumsRes['albums'][number] = {
+              ...albumModel.get(),
+              photos: photoModels.map((photoModel, index) => ({
+                ...photoModel.get(),
+                image: processImageObj(images[index].get()),
+              })),
+            };
+            resolve(album);
+          })
+      )
+    );
+
+    res.send(
+      wrapRes<GetAlbumsRes>({
+        albums,
+      })
+    );
   });
