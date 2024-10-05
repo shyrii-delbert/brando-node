@@ -3,29 +3,44 @@ import { sequelize } from '$db/connection';
 import { Photo } from './photo';
 import { ImageModel } from '$typings/images';
 
-export class Image extends Model<ImageModel> { }
+export class Image extends Model<ImageModel> {}
 
-Image.init({
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-    unique: true,
+Image.init(
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+      unique: true,
+    },
+    sha256: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    proxied: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    exif: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    objectPath: {
+      type: DataTypes.STRING,
+      field: 'object_path',
+      allowNull: false,
+    },
+    uploaded: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
-  objectPath: {
-    type: DataTypes.STRING,
-    field: 'object_path',
-    allowNull: false,
-  },
-  uploaded: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
-}, {
-  sequelize,
-  tableName: 'images',
-  indexes: [{ unique: true, fields: ['id'] }],
-});
+  {
+    sequelize,
+    tableName: 'images',
+    indexes: [{ unique: true, fields: ['id'] }],
+  }
+);
 
 Photo.hasOne(Image, {
   foreignKey: 'image_id',

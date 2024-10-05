@@ -1,128 +1,214 @@
-import dayjs from 'dayjs';
-
-import { GetImageAuthorizeRes, PatchImagesReq, PostImagesReq, PostImagesRes } from '$typings/images';
+import { ImageModel, PostImagesRes } from '$typings/images';
 import { BrandoError } from '$typings/errors';
 import { Router } from 'express';
 import { ErrorType } from '$consts/errors';
 import { supportImageExt } from './consts';
 import { v4 } from 'uuid';
-import { getStsRes, verifyImage } from './utils';
 import { Image } from '$db/models/image';
 import { wrapRes } from '$utils';
 import { Response } from '$typings/response';
+import multer from 'multer';
+import os from 'os';
+import path from 'path';
+import { fileTypeFromFile } from 'file-type';
+import sha256File from 'sha256-file';
+import { promisify } from 'util';
+import { Op } from 'sequelize';
+import exifr from 'exifr';
+import fs from 'fs';
+import {
+  convertEvString,
+  convertExposureTime,
+  convertFNumber,
+  convertFocalLength,
+  convertISO,
+  resizeImage,
+  uploadImage,
+} from './utils';
+import _imageSize from 'image-size';
+
+const promisedSha256File = promisify<string, string>(sha256File);
+const unlink = promisify(fs.unlink);
+const getImageSize = promisify(_imageSize);
 
 const imagesRouter = Router({ mergeParams: true });
 
-imagesRouter.route('/')
-  .post<{}, Response<PostImagesRes>, PostImagesReq>(async (req, res, next) => {
-    const { imageType } = req.body || {};
-    if (!imageType) {
-      next({
-        type: ErrorType.InvalidParams,
-      } as BrandoError);
-      return;
-    }
-    if (!supportImageExt.has(req.body.imageType)) {
-      next({
-        type: ErrorType.ImageNotSupport,
-        extraInfo: 'Uploaded ' + imageType,
-      } as BrandoError);
-      return;
-    }
+const uploader = multer({ dest: path.resolve(os.tmpdir(), 'brando') });
 
-    const imageId = v4();
-    try {
-      const path = `images/${imageId}.${imageType}`;
+imagesRouter
+  .route('/')
+  .post<{}, Response<PostImagesRes>, {}>(
+    uploader.single('image'),
+    async (req, res, next) => {
+      const file = req.file;
+      if (!file) {
+        next({
+          type: ErrorType.InvalidParams,
+        } as BrandoError);
+        return;
+      }
 
-      await Image.create({
-        id: imageId,
-        objectPath: path,
-        uploaded: false,
+      const fileInfo = await fileTypeFromFile(file.path);
+
+      if (!fileInfo) {
+        next({
+          type: ErrorType.InvalidParams,
+        } as BrandoError);
+        return;
+      }
+
+      if (!supportImageExt.has(fileInfo.ext)) {
+        next({
+          type: ErrorType.ImageNotSupport,
+          extraInfo: 'Uploaded ' + fileInfo.ext,
+        } as BrandoError);
+        return;
+      }
+
+      const sha256 = await promisedSha256File(file.path);
+
+      const existImage = await Image.findOne({
+        where: {
+          sha256: {
+            [Op.eq]: sha256,
+          },
+        },
       });
 
-      res.send(wrapRes<PostImagesRes>({
-        imageId,
-        path,
-        bucket: process.env.IMAGES_BUCKET_NAME,
-        region: process.env.BUCKET_REGION,
-      }));
-    } catch (e) {
-      next({
-        type: ErrorType.DBError,
-        extraInfo: JSON.stringify(e),
-      } as BrandoError);
-    }
-  });
+      if (existImage) {
+        console.warn(existImage.get());
+        res.send(
+          wrapRes<PostImagesRes>({
+            imageId: existImage.get().id,
+          })
+        );
+        return;
+      }
 
+      const imageId = v4();
+      try {
+        const metaData = await exifr.parse(file.path);
 
-imagesRouter.route('/:imageId')
-  .patch<{ imageId: string }, Response<{}>, PatchImagesReq>(async (req, res, next) => {
-    const { imageId } = req.params || {};
+        const exifObj: ImageModel['exif'] = {
+          manufacturer: metaData?.Make,
+          model: metaData?.Model,
+          dateTime: metaData?.CreateDate?.toISOString(),
+          exposureTime: convertExposureTime(metaData?.ExposureTime),
+          ev: convertEvString(metaData?.ExposureCompensation),
+          fNumber: convertFNumber(metaData?.FNumber),
+          iso: convertISO(metaData?.ISO),
+          focalLength: convertFocalLength(metaData?.FocalLength),
+          lens: metaData?.LensModel,
+          gpsLongitude: metaData?.longitude,
+          gpsLatitude: metaData?.latitude,
+        };
 
-    if (!imageId) {
-      next({
-        type: ErrorType.InvalidParams,
-      } as BrandoError);
-      return;
-    }
+        // 转码
+        const imageSize = await getImageSize(file.path);
 
-    const image = await Image.findOne({
-      where: {
-        id: imageId,
-      },
-    });
+        if (!imageSize || !imageSize.height || !imageSize.width) {
+          next({
+            type: ErrorType.ImageNotSupport,
+            extraInfo: "Image can't parse height & width",
+          } as BrandoError);
+          return;
+        }
 
-    if (!imageId) {
-      next({
-        type: ErrorType.ImageNotFound,
-        extraInfo: 'ImageId: ' + imageId,
-      } as BrandoError);
-      return;
-    }
+        const maxLength = Math.max(imageSize.height, imageSize.width);
+        const paths = [];
+        const tasks = [];
+        const levels: ('origin' | '480p' | '720p' | '1080p')[] = ['origin'];
 
-    const imageValue = image!.toJSON();
-    if (imageValue.uploaded) {
-      res.send(wrapRes({}));
-      return;
-    }
+        // 原图压缩
+        let targetFilePath = path.resolve(
+          file.path,
+          `../${file.filename}_origin.jpg`
+        );
+        paths.push(targetFilePath);
+        if (maxLength > 2560) {
+          tasks.push(
+            resizeImage(
+              2560,
+              file.path,
+              targetFilePath,
+              imageSize.height,
+              imageSize.width
+            )
+          );
+        } else {
+          tasks.push(
+            resizeImage(
+              maxLength,
+              file.path,
+              targetFilePath,
+              imageSize.height,
+              imageSize.width
+            )
+          );
+        }
 
-    try {
-      const verifyRes = await verifyImage(imageValue.objectPath);
-      if (verifyRes) {
-        await image!.set('uploaded', true).save();
-        res.send(wrapRes({}));
-      } else {
+        ([1080, 720, 480] as const).forEach((resolution) => {
+          if (maxLength > resolution) {
+            targetFilePath = path.resolve(
+              file.path,
+              `../${file.filename}_${resolution}p.jpg`
+            );
+            paths.push(targetFilePath);
+            levels.push(`${resolution}p`);
+
+            tasks.push(
+              resizeImage(
+                resolution,
+                file.path,
+                targetFilePath,
+                imageSize.height!,
+                imageSize.width!
+              )
+            );
+          }
+        });
+
+        // 上传
+        const objectPaths: { [key in (typeof levels)[number]]?: string } = {};
+        await Promise.all(tasks);
+        await Promise.all(
+          paths.map((filePath, index) => {
+            const objPath = `images/${path.basename(filePath)}`;
+            objectPaths[levels[index]] = objPath;
+            return uploadImage(filePath, objPath);
+          })
+        );
+
+        // 清理 /tmp
+        paths.forEach((path) => {
+          unlink(path);
+        });
+
+        await Image.create({
+          id: imageId,
+          objectPath: objectPaths.origin!,
+          uploaded: true,
+          sha256,
+          exif: exifObj,
+          proxied: {
+            '480p': objectPaths['480p'],
+            '720p': objectPaths['720p'],
+            '1080p': objectPaths['1080p'],
+          },
+        });
+
+        res.send(
+          wrapRes<PostImagesRes>({
+            imageId,
+          })
+        );
+      } catch (e) {
         next({
-          type: ErrorType.ImageNotUploaded,
-          extraInfo: 'ImageId: ' + imageId,
+          type: ErrorType.ServiceInternalError,
+          extraInfo: JSON.stringify(e),
         } as BrandoError);
       }
-    } catch (e) {
-      next({
-        type: ErrorType.COSError,
-        extraInfo: JSON.stringify(e),
-      } as BrandoError)
     }
-  });
+  );
 
-imagesRouter.route('/authorize').get<{}, Response<GetImageAuthorizeRes>>(async (req, res, next) => {
-  try {
-    const data = await getStsRes();
-    res.send(wrapRes<GetImageAuthorizeRes>({
-      tmpSecretId: data.credentials.tmpSecretId,
-      tmpSecretKey: data.credentials.tmpSecretKey,
-      sessionToken: data.credentials.sessionToken,
-      startTime: dayjs().unix(),
-      expiredTime: dayjs().add(10, 'm').unix(),
-    }));
-  } catch (e) {
-    next({
-      type: ErrorType.STSError,
-      extraInfo: JSON.stringify(e),
-    } as BrandoError);
-  }
-});
-
-export {
-  imagesRouter,
-};
+export { imagesRouter };
