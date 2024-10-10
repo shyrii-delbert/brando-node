@@ -1,22 +1,27 @@
 import { Router } from 'express';
 import { Response } from '$typings/response';
-import { GetAlbumsRes, PostAlbumsReq } from '$typings/albums';
+import {
+  AlbumModel,
+  AlbumRes,
+  GetAlbumsMetaRes,
+  GetAlbumsRes,
+  GetSingleAlbumRes,
+  PostAlbumsReq,
+} from '$typings/albums';
 import { BrandoError } from '$typings/errors';
 import { ErrorType } from '$consts/errors';
-import { isArray, isBoolean, isObject, isString } from 'lodash-es';
+import { isArray, isBoolean, isObject, isString, omit, pick } from 'lodash-es';
 import { Image, processImageObj } from '$db/models/image';
 import { Album, Photo } from '$db';
 import { wrapRes } from '$utils';
-import {
-  HasManyGetAssociationsMixin,
-  HasOneGetAssociationMixin,
-} from 'sequelize';
+import { Op } from 'sequelize';
+import { auth } from '$middlewares/auth';
 
 export const albumsRouter = Router({ mergeParams: true });
 
 albumsRouter
   .route('/')
-  .post<{}, Response<{}>, PostAlbumsReq>(async (req, res, next) => {
+  .post<{}, Response<{}>, PostAlbumsReq>(auth, async (req, res, next) => {
     const { photos, subArea, mainArea, date } = req.body || {};
     if (
       !isArray(photos) ||
@@ -90,38 +95,30 @@ albumsRouter
 
     res.send(wrapRes({}));
   })
-  .get(async (req, res, next) => {
-    const albumModels = await Album.findAll();
+  .get(auth, async (req, res, next) => {
+    const albumModels = await Album.findAll({
+      include: {
+        model: Photo,
+        as: 'photos',
+        include: [
+          {
+            model: Image,
+            as: 'image',
+          },
+        ],
+      },
+    });
 
-    const albums: GetAlbumsRes['albums'] = await Promise.all(
-      albumModels.map(
-        (albumModel) =>
-          new Promise<GetAlbumsRes['albums'][number]>(async (resolve) => {
-            const photoModels = await (
-              (albumModel as any)
-                .getPhotos as HasManyGetAssociationsMixin<Photo>
-            )();
-
-            const images = await Promise.all(
-              photoModels.map((photoModel) =>
-                (
-                  (photoModel as any)
-                    .getImage as HasOneGetAssociationMixin<Image>
-                )()
-              )
-            );
-
-            const album: GetAlbumsRes['albums'][number] = {
-              ...albumModel.get(),
-              photos: photoModels.map((photoModel, index) => ({
-                ...photoModel.get(),
-                image: processImageObj(images[index].get()),
-              })),
-            };
-            resolve(album);
-          })
-      )
-    );
+    const albums: GetAlbumsRes['albums'] = albumModels.map((albumModel) => {
+      const album = albumModel.get() as any;
+      return {
+        ...album,
+        photos: album.photos.map((photo: any) => ({
+          ...photo.get(),
+          image: processImageObj(photo.image.get()),
+        })),
+      };
+    });
 
     res.send(
       wrapRes<GetAlbumsRes>({
@@ -129,3 +126,95 @@ albumsRouter
       })
     );
   });
+
+albumsRouter
+  .route('/meta')
+  .get<{}, Response<GetAlbumsMetaRes>>(async (req, res, next) => {
+    const albumModels = await Album.findAll({
+      include: {
+        model: Photo,
+        as: 'photos',
+        where: {
+          isPost: {
+            [Op.eq]: true,
+          },
+        },
+        include: [
+          {
+            model: Image,
+            as: 'image',
+          },
+        ],
+      },
+    });
+
+    const albums = albumModels.map((albumModel) => {
+      const album = albumModel.get() as any;
+      return {
+        ...omit(album as AlbumModel, ['photos']),
+        poster: pick(album.photos[0]?.image.get(), ['objectPath', 'proxied']),
+      };
+    }) as GetAlbumsMetaRes['albums'];
+    res.send(
+      wrapRes<GetAlbumsMetaRes>({
+        albums,
+      })
+    );
+  });
+
+albumsRouter
+  .route('/:albumId')
+  .get<{ albumId: string }, Response<GetSingleAlbumRes>, {}>(
+    async (req, res, next) => {
+      if (!req.params.albumId) {
+        next({
+          type: ErrorType.InvalidParams,
+          extraInfo: "Can't find albumId in params",
+        } as BrandoError);
+        return;
+      }
+      const albumModel = await Album.findOne({
+        where: {
+          id: req.params.albumId,
+        },
+        include: {
+          model: Photo,
+          as: 'photos',
+          where: {
+            isPost: {
+              [Op.eq]: true,
+            },
+          },
+          include: [
+            {
+              model: Image,
+              as: 'image',
+            },
+          ],
+        },
+      });
+
+      if (!albumModel) {
+        next({
+          type: ErrorType.AlbumNotFound,
+          extraInfo: `Can't find target album: ${req.params.albumId}`,
+        } as BrandoError);
+        return;
+      }
+
+      const albumObj = albumModel.get() as any;
+      const album = {
+        ...albumObj,
+        photos: albumObj.photos.map((photo: any) => ({
+          ...photo.get(),
+          image: processImageObj(photo.image.get()),
+        })),
+      } as AlbumRes;
+
+      res.send(
+        wrapRes<GetSingleAlbumRes>({
+          album,
+        })
+      );
+    }
+  );

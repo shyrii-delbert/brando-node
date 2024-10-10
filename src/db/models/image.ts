@@ -41,8 +41,9 @@ Image.init(
 
 Photo.hasOne(Image, {
   foreignKey: 'image_id',
+  as: 'image',
 });
-Image.belongsTo(Photo);
+Image.belongsTo(Photo, { as: 'photo' });
 
 export function processImageObj(image: ImageModel): ImageModel {
   return {

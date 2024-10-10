@@ -16,10 +16,22 @@ export interface PostAlbumsReq extends Omit<AlbumModel, 'id'> {
   photos: PhotoParam[];
 }
 
+export type AlbumRes = AlbumModel & {
+  photos: (PhotoModel & {
+    image: ImageModel;
+  })[];
+};
+
 export interface GetAlbumsRes {
+  albums: AlbumRes[];
+}
+
+export interface GetSingleAlbumRes {
+  album: AlbumRes;
+}
+
+export interface GetAlbumsMetaRes {
   albums: (AlbumModel & {
-    photos: (PhotoModel & {
-      image: ImageModel;
-    })[];
+    poster: Pick<ImageModel, 'objectPath' | 'proxied'>;
   })[];
 }

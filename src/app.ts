@@ -13,7 +13,6 @@ import { errorHandler } from '$middlewares/error-handler';
 import { brandoLogger } from '$logger';
 import { expressLogMiddleware } from '$middlewares/log';
 import { originList } from '$consts/cors';
-import { auth } from '$middlewares/auth';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -33,7 +32,6 @@ initDB()
     app.use(expressLogMiddleware);
     app.use(bodyParser.json());
     app.use(cookieParser());
-    app.use(auth);
     registerRoutes(app);
     app.use(errorHandler);
 
