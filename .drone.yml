@@ -1,0 +1,111 @@
+---
+kind: pipeline
+name: Build
+type: docker
+
+steps:
+  - name: install deps
+    image: node:20
+    commands:
+      - npm i -g pnpm
+      - pnpm i
+
+  - name: build
+    image: node:20
+    commands:
+      - npm run build
+
+  - name: zip
+    image: alpine:3.20.3
+    commands:
+      - apk add zip
+      - zip -r -v ./bundle.zip ./dist
+
+  - name: upload
+    image: plugins/s3
+    settings:
+      bucket:
+        from_secret: s3_bucket
+      access_key:
+        from_secret: s3_secret_id
+      secret_key:
+        from_secret: s3_secret_key
+      endpoint:
+        from_secret: s3_endpoint
+      region:
+        from_secret: s3_region
+      source: bundle.zip
+      target: ${DRONE_REPO}/${DRONE_BUILD_NUMBER}
+
+trigger:
+  branch:
+    - main
+  event:
+    - push
+
+---
+kind: pipeline
+type: docker
+name: Deploy
+
+steps:
+  - name: download artifact
+    image: alpine:3.20.3
+    environment:
+      S3_HOST:
+        from_secret: s3_host
+    commands:
+      - apk add unzip wget
+      - wget $S3_HOST/$DRONE_REPO/$DRONE_BUILD_PARENT/bundle.zip
+      - unzip bundle.zip
+
+  - name: build docker image
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      repo: delbertbeta/brando-node
+      tags:
+        - latest
+        - main
+      purge: false
+
+  - name: deploy
+    image: appleboy/drone-ssh
+    environment:
+      HTTP_EXPOSE_PORT:
+        from_secret: http_expose_port
+      ENV_FILE_PATH:
+        from_secret: env_file_path
+    settings:
+      envs:
+        - HTTP_EXPOSE_PORT
+        - ENV_FILE_PATH
+      host:
+        from_secret: deploy_host
+      username:
+        from_secret: deploy_ssh_username
+      password:
+        from_secret: deploy_ssh_password
+      port: 22
+      command_timeout: 10m
+      script:
+        - docker pull delbertbeta/brando-node:main
+        - docker stop brando-node || true
+        - docker rm brando-node || true
+        - |-
+          docker run \
+            -d \
+            --restart=always \
+            --name=brando-node \
+            --publish=$${HTTP_EXPOSE_PORT}:8088 \
+            --volume=$${ENV_FILE_PATH}:/brando-node/.env \
+            delbertbeta/brando-node:main
+
+trigger:
+  event:
+    - promote
+  target:
+    - production
