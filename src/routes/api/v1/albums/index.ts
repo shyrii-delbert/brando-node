@@ -152,7 +152,10 @@ albumsRouter
       const album = albumModel.get() as any;
       return {
         ...omit(album as AlbumModel, ['photos']),
-        poster: pick(album.photos[0]?.image.get(), ['objectPath', 'proxied']),
+        poster: pick(processImageObj(album.photos[0]?.image.get()), [
+          'objectPath',
+          'proxied',
+        ]),
       };
     }) as GetAlbumsMetaRes['albums'];
     res.send(
