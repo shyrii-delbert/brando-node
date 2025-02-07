@@ -9,7 +9,7 @@ export enum ErrorType {
   'AlbumNotFound' = 'AlbumNotFound',
   'STSError' = 'STSError',
   'DBError' = 'DBError',
-  'COSError' = 'COSError',
+  'S3Error' = 'S3Error',
   'NotLogin' = 'NotLogin',
 }
 
@@ -23,7 +23,7 @@ export const ErrorHttpCode = {
   [ErrorType.AlbumNotFound]: StatusCodes.NOT_FOUND,
   [ErrorType.STSError]: StatusCodes.INTERNAL_SERVER_ERROR,
   [ErrorType.DBError]: StatusCodes.INTERNAL_SERVER_ERROR,
-  [ErrorType.COSError]: StatusCodes.INTERNAL_SERVER_ERROR,
+  [ErrorType.S3Error]: StatusCodes.INTERNAL_SERVER_ERROR,
 };
 
 export const ErrorCode = {
@@ -36,7 +36,7 @@ export const ErrorCode = {
   [ErrorType.AlbumNotFound]: 1005,
   [ErrorType.STSError]: 2001,
   [ErrorType.DBError]: 3001,
-  [ErrorType.COSError]: 4001,
+  [ErrorType.S3Error]: 4001,
 };
 
 const unexpectedErrorMsg =
@@ -52,5 +52,5 @@ export const ErrorMsg = {
   [ErrorType.AlbumNotFound]: 'Requested album is not found',
   [ErrorType.STSError]: unexpectedErrorMsg,
   [ErrorType.DBError]: unexpectedErrorMsg,
-  [ErrorType.COSError]: unexpectedErrorMsg,
+  [ErrorType.S3Error]: unexpectedErrorMsg,
 };
