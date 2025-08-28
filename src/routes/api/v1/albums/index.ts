@@ -183,11 +183,6 @@ albumsRouter
         include: {
           model: Photo,
           as: 'photos',
-          where: {
-            isPost: {
-              [Op.eq]: true,
-            },
-          },
           include: [
             {
               model: Image,
