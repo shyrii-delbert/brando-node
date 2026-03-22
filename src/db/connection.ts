@@ -8,6 +8,9 @@ export const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     dialect: 'mariadb',
+    dialectOptions: {
+      connectTimeout: 10_000,
+    },
     logging: msg => dbLogger.info(msg),
   },
 );
