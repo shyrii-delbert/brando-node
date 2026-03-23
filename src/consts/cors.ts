@@ -1,4 +1,5 @@
 export const originList = [
+  'https://brando.delbertbeta.life',
   'https://brando-admin.delbertbeta.life',
   'https://brando-dev.delbertbeta.life',
   'https://brando-staging.delbertbeta.life',
