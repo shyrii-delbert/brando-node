@@ -17,6 +17,7 @@ import { Op } from 'sequelize';
 import exifr from 'exifr';
 import fs from 'fs';
 import {
+  composeWatermark,
   convertEvString,
   convertExposureTime,
   convertFNumber,
@@ -114,6 +115,7 @@ imagesRouter
         }
 
         const maxLength = Math.max(imageSize.height, imageSize.width);
+        const watermarkedBuffer = await composeWatermark(file.path);
         const paths = [];
         const tasks = [];
         const levels: ('origin' | '480p' | '720p' | '1080p')[] = ['origin'];
@@ -131,7 +133,8 @@ imagesRouter
               file.path,
               targetFilePath,
               imageSize.height,
-              imageSize.width
+              imageSize.width,
+              watermarkedBuffer
             )
           );
         } else {
@@ -141,7 +144,8 @@ imagesRouter
               file.path,
               targetFilePath,
               imageSize.height,
-              imageSize.width
+              imageSize.width,
+              watermarkedBuffer
             )
           );
         }
@@ -161,7 +165,8 @@ imagesRouter
                 file.path,
                 targetFilePath,
                 imageSize.height!,
-                imageSize.width!
+                imageSize.width!,
+                watermarkedBuffer
               )
             );
           }

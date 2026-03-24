@@ -1,6 +1,61 @@
 import { s3 } from '$utils/s3';
 import sharp from 'sharp';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
+import path from 'node:path';
+
+const WATERMARK_FILENAME = 'watermark.png';
+
+const getWatermarkAssetPath = async () => {
+  const candidates = [
+    path.resolve(process.cwd(), 'src/assets', WATERMARK_FILENAME),
+    path.resolve(process.cwd(), 'dist/assets', WATERMARK_FILENAME),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {}
+  }
+
+  throw new Error(`Watermark asset not found: ${candidates.join(', ')}`);
+};
+
+export const composeWatermark = async (filePath: string) => {
+  const image = sharp(filePath).rotate();
+  const metadata = await image.metadata();
+
+  if (!metadata.width || !metadata.height) {
+    throw new Error("Image can't parse height & width");
+  }
+
+  const shortSide = Math.min(metadata.width, metadata.height);
+  const watermarkSize = Math.max(Math.round(shortSide * 0.1), 48);
+  const margin = Math.max(Math.round(shortSide * 0.03), 16);
+  const posX = Math.round((metadata.width - watermarkSize) / 2);
+  const posY = metadata.height - watermarkSize - margin;
+
+  const watermarkBuffer = await sharp(await getWatermarkAssetPath())
+    .resize(watermarkSize, watermarkSize, {
+      fit: 'fill',
+      kernel: sharp.kernel.lanczos3,
+    })
+    .ensureAlpha()
+    .png()
+    .toBuffer();
+
+  return image
+    .ensureAlpha()
+    .composite([
+      {
+        input: watermarkBuffer,
+        left: posX,
+        top: posY,
+      },
+    ])
+    .jpeg({ mozjpeg: true })
+    .toBuffer();
+};
 
 export const uploadImage = (path: string, key: string) => {
   return new Promise(async (resolve, reject) => {
@@ -69,7 +124,8 @@ export const resizeImage = (
   filePath: string,
   outputFilePath: string,
   originHeight: number,
-  originWidth: number
+  originWidth: number,
+  sourceBuffer?: Buffer
 ) => {
   const isHorizontal = originWidth > originHeight;
   const ratio = originWidth / originHeight;
@@ -81,7 +137,8 @@ export const resizeImage = (
   );
 
   return new Promise((resolve, reject) => {
-    sharp(filePath)
+    sharp(sourceBuffer ?? filePath)
+      .rotate()
       .resize(targetWidth, targetHeight)
       .jpeg({ mozjpeg: true })
       .toFile(outputFilePath, (err, info) => {

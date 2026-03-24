@@ -6,7 +6,8 @@
     "start": "pnpm run build && node --enable-source-maps ./dist/app.js",
     "build": "rimraf ./dist && node config/build.js",
     "build_prd": "rimraf ./dist && cross-env NODE_ENV=production node config/build.js",
-    "gen-idl": "buf generate"
+    "gen-idl": "buf generate",
+    "debug:watermark": "node scripts/debug-watermark.js"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.1.0",
