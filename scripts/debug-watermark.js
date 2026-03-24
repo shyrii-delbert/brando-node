@@ -29,7 +29,7 @@ const composeWatermark = async (inputPath) => {
 
   const shortSide = Math.min(metadata.width, metadata.height);
   const watermarkSize = Math.max(Math.round(shortSide * 0.1), 48);
-  const margin = Math.max(Math.round(shortSide * 0.03), 16);
+  const margin = Math.max(Math.round(shortSide * 0.05), 16);
   const posX = Math.round((metadata.width - watermarkSize) / 2);
   const posY = metadata.height - watermarkSize - margin;
 
