@@ -19,68 +19,64 @@ import { auth } from '$middlewares/auth';
 
 export const albumsRouter = Router({ mergeParams: true });
 
+const validateAlbumReq = async (
+  body: PostAlbumsReq
+): Promise<{ imageList: Image[]; errorType?: ErrorType }> => {
+  const { photos, subArea, mainArea, date } = body || {};
+  if (
+    !isArray(photos) ||
+    !isString(subArea) ||
+    !isString(mainArea) ||
+    !isString(date)
+  ) {
+    return { imageList: [], errorType: ErrorType.InvalidParams };
+  }
+
+  const imageList: Image[] = [];
+  let hasPost = false;
+
+  for (const photo of photos) {
+    if (!isObject(photo)) {
+      return { imageList: [], errorType: ErrorType.InvalidParams };
+    }
+    const { isPost, title, description, imageId } = photo;
+    if (
+      !isBoolean(isPost) ||
+      !isString(title) ||
+      !isString(description) ||
+      !isString(imageId)
+    ) {
+      return { imageList: [], errorType: ErrorType.InvalidParams };
+    }
+
+    const image = await Image.findOne({ where: { id: imageId } });
+    if (!image) {
+      return { imageList: [], errorType: ErrorType.ImageNotFound };
+    }
+
+    if (isPost && hasPost) {
+      return { imageList: [], errorType: ErrorType.InvalidParams };
+    }
+    if (isPost) {
+      hasPost = true;
+    }
+    imageList.push(image);
+  }
+
+  return { imageList };
+};
+
 albumsRouter
   .route('/')
   .post<{}, Response<{}>, PostAlbumsReq>(auth, async (req, res, next) => {
     const { photos, subArea, mainArea, date } = req.body || {};
-    if (
-      !isArray(photos) ||
-      !isString(subArea) ||
-      !isString(mainArea) ||
-      !isString(date)
-    ) {
+    const { imageList, errorType } = await validateAlbumReq(req.body);
+    if (errorType) {
       next({
-        type: ErrorType.InvalidParams,
+        type: errorType,
         extraInfo: JSON.stringify(req.body),
       } as BrandoError);
       return;
-    }
-
-    const imageList = [];
-    let hasPost = false;
-
-    for (const photo of photos) {
-      if (!isObject(photo)) {
-        next({
-          type: ErrorType.InvalidParams,
-          extraInfo: JSON.stringify(req.body),
-        } as BrandoError);
-        return;
-      }
-      const { isPost, title, description, imageId } = photo;
-      if (
-        !isBoolean(isPost) ||
-        !isString(title) ||
-        !isString(description) ||
-        !isString(imageId)
-      ) {
-        next({
-          type: ErrorType.InvalidParams,
-          extraInfo: JSON.stringify(req.body),
-        } as BrandoError);
-        return;
-      }
-
-      const image = await Image.findOne({ where: { id: imageId } });
-      if (!image) {
-        next({
-          type: ErrorType.ImageNotFound,
-          extraInfo: JSON.stringify(req.body),
-        } as BrandoError);
-        return;
-      }
-
-      if (isPost && hasPost) {
-        next({
-          type: ErrorType.InvalidParams,
-          extraInfo: JSON.stringify(req.body),
-        } as BrandoError);
-        return;
-      }
-      if (isPost) {
-        hasPost = true;
-      }
-      imageList.push(image);
     }
 
     const album = await Album.create({ subArea, mainArea, date });
@@ -167,6 +163,67 @@ albumsRouter
 
 albumsRouter
   .route('/:albumId')
+  .put<{ albumId: string }, Response<{}>, PostAlbumsReq>(
+    auth,
+    async (req, res, next) => {
+      if (!req.params.albumId) {
+        next({
+          type: ErrorType.InvalidParams,
+          extraInfo: "Can't find albumId in params",
+        } as BrandoError);
+        return;
+      }
+
+      const albumModel = await Album.findOne({
+        where: {
+          id: req.params.albumId,
+        },
+        include: {
+          model: Photo,
+          as: 'photos',
+        },
+      });
+
+      if (!albumModel) {
+        next({
+          type: ErrorType.AlbumNotFound,
+          extraInfo: `Can't find target album: ${req.params.albumId}`,
+        } as BrandoError);
+        return;
+      }
+
+      const { photos, subArea, mainArea, date } = req.body || {};
+      const { imageList, errorType } = await validateAlbumReq(req.body);
+      if (errorType) {
+        next({
+          type: errorType,
+          extraInfo: JSON.stringify(req.body),
+        } as BrandoError);
+        return;
+      }
+
+      await albumModel.update({
+        subArea,
+        mainArea,
+        date,
+      });
+
+      const currentPhotos = (albumModel.get() as any).photos || [];
+      for (const photo of currentPhotos) {
+        await photo.destroy();
+      }
+
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        const { isPost, title, description } = photo;
+        const photoModel = await Photo.create({ title, description, isPost });
+        await (photoModel as any).setImage(imageList[i]);
+        await (albumModel as any).addPhoto(photoModel);
+      }
+
+      res.send(wrapRes({}));
+    }
+  )
   .get<{ albumId: string }, Response<GetSingleAlbumRes>, {}>(
     async (req, res, next) => {
       if (!req.params.albumId) {
@@ -215,4 +272,39 @@ albumsRouter
         })
       );
     }
-  );
+  )
+  .delete<{ albumId: string }, Response<{}>, {}>(auth, async (req, res, next) => {
+    if (!req.params.albumId) {
+      next({
+        type: ErrorType.InvalidParams,
+        extraInfo: "Can't find albumId in params",
+      } as BrandoError);
+      return;
+    }
+
+    const albumModel = await Album.findOne({
+      where: {
+        id: req.params.albumId,
+      },
+      include: {
+        model: Photo,
+        as: 'photos',
+      },
+    });
+
+    if (!albumModel) {
+      next({
+        type: ErrorType.AlbumNotFound,
+        extraInfo: `Can't find target album: ${req.params.albumId}`,
+      } as BrandoError);
+      return;
+    }
+
+    const albumObj = albumModel.get() as any;
+    for (const photo of albumObj.photos || []) {
+      await photo.destroy();
+    }
+    await albumModel.destroy();
+
+    res.send(wrapRes({}));
+  });
