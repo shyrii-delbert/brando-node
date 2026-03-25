@@ -14,10 +14,102 @@ import { isArray, isBoolean, isObject, isString, omit, pick } from 'lodash-es';
 import { Image, processImageObj } from '$db/models/image';
 import { Album, Photo } from '$db';
 import { wrapRes } from '$utils';
-import { Op } from 'sequelize';
+import { FindOptions, Op, WhereOptions } from 'sequelize';
 import { auth } from '$middlewares/auth';
 
 export const albumsRouter = Router({ mergeParams: true });
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 10;
+
+const hasWhereConditions = (where: WhereOptions) => Reflect.ownKeys(where).length > 0;
+
+const parsePositiveInt = (value: unknown) => {
+  if (!isString(value)) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return undefined;
+  }
+
+  return parsed;
+};
+
+const buildAlbumListQueryOptions = (
+  query: Record<string, unknown>,
+  options?: {
+    withDateRange?: boolean;
+    withKeywordQuery?: boolean;
+  }
+): FindOptions => {
+  const findOptions: FindOptions = {
+    order: [['date', 'DESC']],
+  };
+
+  const where: WhereOptions = {};
+
+  if (options?.withDateRange) {
+    const startDate = isString(query.start_date) ? query.start_date : undefined;
+    const endDate = isString(query.end_date) ? query.end_date : undefined;
+    const dateWhere: WhereOptions = {};
+
+    if (startDate) {
+      dateWhere[Op.gte] = startDate;
+    }
+    if (endDate) {
+      dateWhere[Op.lte] = endDate;
+    }
+    if (hasWhereConditions(dateWhere)) {
+      where.date = dateWhere;
+    }
+  }
+
+  if (options?.withKeywordQuery) {
+    const keyword = isString(query.query) ? query.query.trim() : '';
+    if (keyword) {
+      where[Op.or] = [
+        {
+          mainArea: {
+            [Op.like]: `%${keyword}%`,
+          },
+        },
+        {
+          subArea: {
+            [Op.like]: `%${keyword}%`,
+          },
+        },
+      ];
+    }
+  }
+
+  if (hasWhereConditions(where)) {
+    findOptions.where = where;
+  }
+
+  const page = parsePositiveInt(query.page);
+  const pageSize = parsePositiveInt(query.page_size);
+  if (page || pageSize) {
+    const normalizedPage = page || DEFAULT_PAGE;
+    const normalizedPageSize = pageSize || DEFAULT_PAGE_SIZE;
+    findOptions.limit = normalizedPageSize;
+    findOptions.offset = (normalizedPage - 1) * normalizedPageSize;
+  }
+
+  return findOptions;
+};
+
+const buildAlbumListCountOptions = (
+  query: Record<string, unknown>,
+  options?: {
+    withDateRange?: boolean;
+    withKeywordQuery?: boolean;
+  }
+) => {
+  const { where } = buildAlbumListQueryOptions(query, options);
+  return where ? { where } : {};
+};
 
 const validateAlbumReq = async (
   body: PostAlbumsReq
@@ -66,6 +158,14 @@ const validateAlbumReq = async (
   return { imageList };
 };
 
+const serializePhoto = (photo: any) => ({
+  id: photo.id,
+  title: photo.title,
+  description: photo.description,
+  isPost: photo.isPost,
+  image: processImageObj(photo.image.get()),
+});
+
 albumsRouter
   .route('/')
   .post<{}, Response<{}>, PostAlbumsReq>(auth, async (req, res, next) => {
@@ -84,7 +184,12 @@ albumsRouter
     for (let i = 0; i < photos.length; i++) {
       const photo = photos[i];
       const { isPost, title, description } = photo;
-      const photoModel = await Photo.create({ title, description, isPost });
+      const photoModel = await Photo.create({
+        title,
+        description,
+        isPost,
+        sort: i,
+      });
       await (photoModel as any).setImage(imageList[i]);
       await (album as any).addPhoto(photoModel);
     }
@@ -92,10 +197,17 @@ albumsRouter
     res.send(wrapRes({}));
   })
   .get(auth, async (req, res, next) => {
+    const query = req.query as Record<string, unknown>;
     const albumModels = await Album.findAll({
+      ...buildAlbumListQueryOptions(query, {
+        withDateRange: true,
+        withKeywordQuery: true,
+      }),
       include: {
         model: Photo,
         as: 'photos',
+        separate: true,
+        order: [['sort', 'ASC']],
         include: [
           {
             model: Image,
@@ -104,21 +216,25 @@ albumsRouter
         ],
       },
     });
+    const total = await Album.count(
+      buildAlbumListCountOptions(query, {
+        withDateRange: true,
+        withKeywordQuery: true,
+      })
+    );
 
     const albums: GetAlbumsRes['albums'] = albumModels.map((albumModel) => {
       const album = albumModel.get() as any;
       return {
         ...album,
-        photos: album.photos.map((photo: any) => ({
-          ...photo.get(),
-          image: processImageObj(photo.image.get()),
-        })),
+        photos: album.photos.map(serializePhoto),
       };
     });
 
     res.send(
       wrapRes<GetAlbumsRes>({
         albums,
+        total,
       })
     );
   });
@@ -127,6 +243,7 @@ albumsRouter
   .route('/meta')
   .get<{}, Response<GetAlbumsMetaRes>>(async (req, res, next) => {
     const albumModels = await Album.findAll({
+      ...buildAlbumListQueryOptions(req.query as Record<string, unknown>),
       include: {
         model: Photo,
         as: 'photos',
@@ -181,6 +298,8 @@ albumsRouter
         include: {
           model: Photo,
           as: 'photos',
+          separate: true,
+          order: [['sort', 'ASC']],
         },
       });
 
@@ -216,7 +335,12 @@ albumsRouter
       for (let i = 0; i < photos.length; i++) {
         const photo = photos[i];
         const { isPost, title, description } = photo;
-        const photoModel = await Photo.create({ title, description, isPost });
+        const photoModel = await Photo.create({
+          title,
+          description,
+          isPost,
+          sort: i,
+        });
         await (photoModel as any).setImage(imageList[i]);
         await (albumModel as any).addPhoto(photoModel);
       }
@@ -240,6 +364,8 @@ albumsRouter
         include: {
           model: Photo,
           as: 'photos',
+          separate: true,
+          order: [['sort', 'ASC']],
           include: [
             {
               model: Image,
@@ -260,10 +386,7 @@ albumsRouter
       const albumObj = albumModel.get() as any;
       const album = {
         ...albumObj,
-        photos: albumObj.photos.map((photo: any) => ({
-          ...photo.get(),
-          image: processImageObj(photo.image.get()),
-        })),
+        photos: albumObj.photos.map(serializePhoto),
       } as AlbumRes;
 
       res.send(
