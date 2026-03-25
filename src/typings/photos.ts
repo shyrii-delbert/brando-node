@@ -3,4 +3,5 @@ export interface PhotoModel {
   isPost: boolean;
   title: string;
   description: string;
+  sort?: number;
 }

@@ -26,6 +26,10 @@ Photo.init(
       type: DataTypes.STRING,
       defaultValue: '',
     },
+    sort: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
   },
   {
     sequelize,

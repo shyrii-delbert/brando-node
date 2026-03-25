@@ -8,7 +8,7 @@ export interface AlbumModel {
   subArea: string;
 }
 
-interface PhotoParam extends Omit<PhotoModel, 'id'> {
+interface PhotoParam extends Omit<PhotoModel, 'id' | 'sort'> {
   imageId: string;
 }
 
@@ -24,6 +24,7 @@ export type AlbumRes = AlbumModel & {
 
 export interface GetAlbumsRes {
   albums: AlbumRes[];
+  total: number;
 }
 
 export interface GetSingleAlbumRes {
