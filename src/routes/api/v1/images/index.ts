@@ -18,15 +18,16 @@ import exifr from 'exifr';
 import fs from 'fs';
 import {
   composeWatermark,
-  convertEvString,
   convertExposureTime,
   convertFNumber,
   convertFocalLength,
   convertISO,
   resizeImage,
+  resizeImageByShortSide,
   uploadImage,
 } from './utils';
 import _imageSize from 'image-size';
+import { convertEvString, getProxyLevels } from './formatters';
 
 const promisedSha256File = promisify<string, string>(sha256File);
 const unlink = promisify(fs.unlink);
@@ -150,26 +151,22 @@ imagesRouter
           );
         }
 
-        ([1080, 720, 480] as const).forEach((resolution) => {
-          if (maxLength > resolution) {
-            targetFilePath = path.resolve(
-              file.path,
-              `../${file.filename}_${resolution}p.jpg`
-            );
-            paths.push(targetFilePath);
-            levels.push(`${resolution}p`);
+        getProxyLevels(imageSize.height, imageSize.width).forEach((level) => {
+          const resolution = Number(level.replace('p', ''));
+          targetFilePath = path.resolve(file.path, `../${file.filename}_${level}.jpg`);
+          paths.push(targetFilePath);
+          levels.push(level);
 
-            tasks.push(
-              resizeImage(
-                resolution,
-                file.path,
-                targetFilePath,
-                imageSize.height!,
-                imageSize.width!,
-                watermarkedBuffer
-              )
-            );
-          }
+          tasks.push(
+            resizeImageByShortSide(
+              resolution,
+              file.path,
+              targetFilePath,
+              imageSize.height!,
+              imageSize.width!,
+              watermarkedBuffer
+            )
+          );
         });
 
         // 上传

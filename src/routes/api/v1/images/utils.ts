@@ -2,6 +2,7 @@ import { s3 } from '$utils/s3';
 import sharp from 'sharp';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { getResizeDimensionsByShortSide } from './formatters';
 
 const WATERMARK_FILENAME = 'watermark.png';
 
@@ -90,13 +91,6 @@ export const convertExposureTime = (time?: number) => {
   return `${targetTime}s`;
 };
 
-export const convertEvString = (ev?: number) => {
-  if (ev === undefined) {
-    return ev;
-  }
-  return `${ev > 0 ? '+' : ''}${ev} ev`;
-};
-
 export const convertFocalLength = (focalLength?: number) => {
   if (focalLength === undefined) {
     return focalLength;
@@ -140,6 +134,35 @@ export const resizeImage = (
     sharp(sourceBuffer ?? filePath)
       .rotate()
       .resize(targetWidth, targetHeight)
+      .jpeg({ mozjpeg: true })
+      .toFile(outputFilePath, (err, info) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(info);
+      });
+  });
+};
+
+export const resizeImageByShortSide = (
+  targetShortSide: number,
+  filePath: string,
+  outputFilePath: string,
+  originHeight: number,
+  originWidth: number,
+  sourceBuffer?: Buffer
+) => {
+  const { width, height } = getResizeDimensionsByShortSide(
+    targetShortSide,
+    originHeight,
+    originWidth
+  );
+
+  return new Promise((resolve, reject) => {
+    sharp(sourceBuffer ?? filePath)
+      .rotate()
+      .resize(width, height)
       .jpeg({ mozjpeg: true })
       .toFile(outputFilePath, (err, info) => {
         if (err) {
