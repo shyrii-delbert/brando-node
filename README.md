@@ -36,7 +36,13 @@ cd /opt/brando-node
 
 ## `.env` 配置
 
-在目标机器上创建 `/opt/brando-node/.env`：
+可以先用仓库里的示例文件生成：
+
+```bash
+cp .env.example /opt/brando-node/.env
+```
+
+再按实际环境修改 `/opt/brando-node/.env`：
 
 ```dotenv
 DB_HOST=127.0.0.1
@@ -48,6 +54,7 @@ SECRET_ID=replace-with-s3-access-key
 SECRET_KEY=replace-with-s3-secret-key
 
 SSO_GRPC=127.0.0.1:2999
+SESSION_COOKIE_KEY=delbertbeta-s-sso
 
 IMAGES_BUCKET_NAME=brando-static
 BUCKET_ENDPOINT=https://example.r2.cloudflarestorage.com
@@ -64,6 +71,7 @@ CDN_PREFIX=https://static.example.com/
 - `SECRET_ID`: 对象存储 Access Key ID
 - `SECRET_KEY`: 对象存储 Secret Access Key
 - `SSO_GRPC`: SSO gRPC 服务地址，格式通常是 `host:port`
+- `SESSION_COOKIE_KEY`: 登录态 cookie 名称；不填时默认读取 `delbertbeta-s-sso`
 - `IMAGES_BUCKET_NAME`: 图片上传目标 bucket 名
 - `BUCKET_ENDPOINT`: S3 兼容存储 endpoint，例如 Cloudflare R2 endpoint
 - `BUCKET_REGION`: 对象存储 region；如果是 R2，通常填 `auto`
