@@ -3,13 +3,14 @@ import { BrandoError, ErrorRes } from '$typings/errors';
 import { Response } from '$typings/response';
 import { RequestHandler } from 'express';
 import { promisedGetUserIdByCookie } from 'src/rpc';
+import { getSessionCookieKey } from './session-cookie';
 
 export const auth: RequestHandler<{}, Response<ErrorRes>> = async (
   req,
   _res,
   next
 ) => {
-  const loginCookie = req.cookies['delbertbeta-s-sso'];
+  const loginCookie = req.cookies[getSessionCookieKey()];
 
   let userId: number | null = null;
   try {
