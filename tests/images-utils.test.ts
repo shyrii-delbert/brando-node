@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   convertEvString,
+  getProcessedImageFilename,
   getProxyLevels,
   getResizeDimensionsByShortSide,
+  PROCESSED_IMAGE_FORMAT,
 } from '../src/routes/api/v1/images/formatters';
 
 test('convertEvString formats positive exposure compensation to one decimal place', () => {
@@ -30,4 +32,10 @@ test('getResizeDimensionsByShortSide scales horizontal and vertical images by sh
     width: 1080,
     height: 1440,
   });
+});
+
+test('processed images are always named as webp outputs', () => {
+  assert.equal(PROCESSED_IMAGE_FORMAT, 'webp');
+  assert.equal(getProcessedImageFilename('sample', 'origin'), 'sample_origin.webp');
+  assert.equal(getProcessedImageFilename('sample', '720p'), 'sample_720p.webp');
 });

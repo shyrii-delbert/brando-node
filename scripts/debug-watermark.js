@@ -101,7 +101,12 @@ const main = async () => {
     return;
   }
 
-  await transformed.jpeg({ mozjpeg: true }).toFile(outputPath);
+  if (outputExt === '.webp') {
+    await transformed.webp().toFile(outputPath);
+    return;
+  }
+
+  await transformed.toFile(outputPath);
 };
 
 main().catch((error) => {

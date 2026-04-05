@@ -27,7 +27,11 @@ import {
   uploadImage,
 } from './utils';
 import _imageSize from 'image-size';
-import { convertEvString, getProxyLevels } from './formatters';
+import {
+  convertEvString,
+  getProcessedImageFilename,
+  getProxyLevels,
+} from './formatters';
 
 const promisedSha256File = promisify<string, string>(sha256File);
 const unlink = promisify(fs.unlink);
@@ -124,7 +128,7 @@ imagesRouter
         // 原图压缩
         let targetFilePath = path.resolve(
           file.path,
-          `../${file.filename}_origin.jpg`
+          `../${getProcessedImageFilename(file.filename, 'origin')}`
         );
         paths.push(targetFilePath);
         if (maxLength > 2560) {
@@ -153,7 +157,10 @@ imagesRouter
 
         getProxyLevels(imageSize.height, imageSize.width).forEach((level) => {
           const resolution = Number(level.replace('p', ''));
-          targetFilePath = path.resolve(file.path, `../${file.filename}_${level}.jpg`);
+          targetFilePath = path.resolve(
+            file.path,
+            `../${getProcessedImageFilename(file.filename, level)}`
+          );
           paths.push(targetFilePath);
           levels.push(level);
 

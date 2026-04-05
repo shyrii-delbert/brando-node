@@ -2,7 +2,10 @@ import { s3 } from '$utils/s3';
 import sharp from 'sharp';
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { getResizeDimensionsByShortSide } from './formatters';
+import {
+  getResizeDimensionsByShortSide,
+  PROCESSED_IMAGE_FORMAT,
+} from './formatters';
 
 const WATERMARK_FILENAME = 'watermark.png';
 
@@ -54,7 +57,7 @@ export const composeWatermark = async (filePath: string) => {
         top: posY,
       },
     ])
-    .jpeg({ mozjpeg: true })
+    .webp()
     .toBuffer();
 };
 
@@ -134,7 +137,7 @@ export const resizeImage = (
     sharp(sourceBuffer ?? filePath)
       .rotate()
       .resize(targetWidth, targetHeight)
-      .jpeg({ mozjpeg: true })
+      .toFormat(PROCESSED_IMAGE_FORMAT)
       .toFile(outputFilePath, (err, info) => {
         if (err) {
           reject(err);
@@ -163,7 +166,7 @@ export const resizeImageByShortSide = (
     sharp(sourceBuffer ?? filePath)
       .rotate()
       .resize(width, height)
-      .jpeg({ mozjpeg: true })
+      .toFormat(PROCESSED_IMAGE_FORMAT)
       .toFile(outputFilePath, (err, info) => {
         if (err) {
           reject(err);

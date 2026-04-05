@@ -6,6 +6,15 @@ export const convertEvString = (ev?: number) => {
   return `${ev > 0 ? '+' : ''}${ev.toFixed(1)} ev`;
 };
 
+export const PROCESSED_IMAGE_FORMAT = 'webp' as const;
+
+export const getProcessedImageFilename = (
+  filename: string,
+  level: 'origin' | '480p' | '720p' | '1080p'
+) => {
+  return `${filename}_${level}.${PROCESSED_IMAGE_FORMAT}`;
+};
+
 export const getProxyLevels = (originHeight: number, originWidth: number) => {
   const shortSide = Math.min(originHeight, originWidth);
 
