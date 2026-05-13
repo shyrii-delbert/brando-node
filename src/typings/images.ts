@@ -7,6 +7,11 @@ export interface ImageModel {
     '720p'?: string;
     '1080p'?: string;
   };
+  livePhoto?: {
+    videoPath: string;
+    mime: 'video/mp4' | 'video/quicktime';
+    presentationTimestampUs?: number;
+  };
   exif: {
     manufacturer?: string;
     model?: string;
