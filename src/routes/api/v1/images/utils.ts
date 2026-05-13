@@ -61,13 +61,18 @@ export const composeWatermark = async (filePath: string) => {
     .toBuffer();
 };
 
-export const uploadImage = (path: string, key: string) => {
+export const uploadBuffer = (
+  buffer: Buffer,
+  key: string,
+  contentType?: string
+) => {
   return new Promise(async (resolve, reject) => {
     s3.putObject(
       {
         Bucket: process.env.IMAGES_BUCKET_NAME,
         Key: key,
-        Body: await readFile(path),
+        Body: buffer,
+        ContentType: contentType,
       },
       (err) => {
         if (err) {
@@ -79,6 +84,10 @@ export const uploadImage = (path: string, key: string) => {
       }
     );
   });
+};
+
+export const uploadImage = async (path: string, key: string) => {
+  return uploadBuffer(await readFile(path), key);
 };
 
 export const convertExposureTime = (time?: number) => {

@@ -5,4 +5,6 @@ export const supportImageExt = new Set([
   'jpeg',
   'png',
   'webp',
+  'heic',
+  'heif',
 ]);

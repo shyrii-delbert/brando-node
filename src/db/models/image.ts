@@ -3,6 +3,7 @@ import { sequelize } from '$db/connection';
 import { Photo } from './photo';
 import { ImageModel } from '$typings/images';
 import { generateCDNUrl } from '$utils';
+import { serializeImagePaths } from '$routes/api/v1/images/serializers';
 
 export class Image extends Model<ImageModel> {}
 
@@ -31,6 +32,11 @@ Image.init(
       field: 'object_path',
       allowNull: false,
     },
+    livePhoto: {
+      type: DataTypes.JSON,
+      field: 'live_photo',
+      allowNull: true,
+    },
   },
   {
     sequelize,
@@ -46,15 +52,5 @@ Photo.hasOne(Image, {
 Image.belongsTo(Photo, { as: 'photo' });
 
 export function processImageObj(image: ImageModel): ImageModel {
-  return {
-    ...image,
-    objectPath: generateCDNUrl(image.objectPath),
-    proxied: Object.entries(image.proxied).reduce<ImageModel['proxied']>(
-      (pre, acc) => {
-        pre[acc[0] as keyof ImageModel['proxied']] = generateCDNUrl(acc[1]);
-        return pre;
-      },
-      {}
-    ),
-  };
+  return serializeImagePaths(image, generateCDNUrl);
 }

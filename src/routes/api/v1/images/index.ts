@@ -16,6 +16,7 @@ import { promisify } from 'util';
 import { Op } from 'sequelize';
 import exifr from 'exifr';
 import fs from 'fs';
+import { readFile } from 'fs/promises';
 import {
   composeWatermark,
   convertExposureTime,
@@ -24,18 +25,19 @@ import {
   convertISO,
   resizeImage,
   resizeImageByShortSide,
+  uploadBuffer,
   uploadImage,
 } from './utils';
-import _imageSize from 'image-size';
 import {
   convertEvString,
   getProcessedImageFilename,
   getProxyLevels,
 } from './formatters';
+import { parseMotionPhotoFromBuffer } from './motion-photo';
+import sharp from 'sharp';
 
 const promisedSha256File = promisify<string, string>(sha256File);
 const unlink = promisify(fs.unlink);
-const getImageSize = promisify(_imageSize);
 
 const imagesRouter = Router({ mergeParams: true });
 
@@ -92,6 +94,11 @@ imagesRouter
 
       const imageId = v4();
       try {
+        const originalBuffer = await readFile(file.path);
+        const motionPhoto = parseMotionPhotoFromBuffer(
+          originalBuffer,
+          fileInfo.ext
+        );
         const metaData = await exifr.parse(file.path);
 
         const exifObj: ImageModel['exif'] = {
@@ -109,7 +116,7 @@ imagesRouter
         };
 
         // 转码
-        const imageSize = await getImageSize(file.path);
+        const imageSize = await sharp(file.path).rotate().metadata();
 
         if (!imageSize || !imageSize.height || !imageSize.width) {
           next({
@@ -187,6 +194,22 @@ imagesRouter
           })
         );
 
+        const livePhoto = motionPhoto
+          ? {
+            videoPath: `live-photos/${imageId}.${motionPhoto.extension}`,
+            mime: motionPhoto.mime,
+            presentationTimestampUs: motionPhoto.presentationTimestampUs,
+          }
+          : undefined;
+
+        if (motionPhoto && livePhoto) {
+          await uploadBuffer(
+            motionPhoto.videoBuffer,
+            livePhoto.videoPath,
+            motionPhoto.mime
+          );
+        }
+
         // 清理 /tmp
         paths.forEach((path) => {
           unlink(path);
@@ -197,6 +220,7 @@ imagesRouter
           objectPath: objectPaths.origin!,
           sha256,
           exif: exifObj,
+          livePhoto,
           proxied: {
             '480p': objectPaths['480p'],
             '720p': objectPaths['720p'],
