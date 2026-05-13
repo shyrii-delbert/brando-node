@@ -2,6 +2,7 @@
   "name": "brando",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "start": "pnpm run build && node --enable-source-maps ./dist/app.js",
     "build": "rimraf ./dist && node config/build.js",
